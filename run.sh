@@ -28,7 +28,7 @@ echo "Starting serial port monitoring..."
     while true; do
         sleep 30
         if [ -f "$LOGNAME" ]; then
-            LINE_COUNT=$(wc -l < "$LOGNAME")
+            LINE_COUNT=$(grep "^{" "$LOGNAME" 2>/dev/null | wc -l)
             echo "[$(date '+%H:%M:%S')] Collected log lines: $LINE_COUNT" >&2
         fi
     done
