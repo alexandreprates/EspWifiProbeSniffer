@@ -16,15 +16,33 @@ fi
 
 echo "=== ESP32 WiFi Probe Monitor ==="
 platformio run --target clean --environment $1 --silent
-echo "Compilando e enviando o firmware para o dispositivo..."
-platformio run --environment $1 --silent
+echo "Compiling firmware..."
+platformio run --environment $1 --silent 2&>/dev/null
+echo "Uploading firmware to the device..."
 platformio run --target upload --environment $1 --silent 2&>/dev/null
-echo "Iniciando monitoramento da porta serial..."
-platformio device monitor --environment $1 --quiet --filter print > $LOGNAME
+echo "Starting serial port monitoring..."
 
-echo "=== ANÁLISE DE PROBES ==="
+# Start background process to monitor log file line count every minute
+(
+    while true; do
+        sleep 30
+        if [ -f "$LOGNAME" ]; then
+            LINE_COUNT=$(wc -l < "$LOGNAME")
+            echo "[$(date '+%H:%M:%S')] Collected log lines: $LINE_COUNT" >&2
+        fi
+    done
+) &
+MONITOR_PID=$!
+
+# Trap to kill background process when script exits
+trap "kill $MONITOR_PID 2>/dev/null" EXIT
+
+echo "Monitoring WiFi probes... Press CTRL+C to stop capture and analyze data."
+platformio device monitor --environment $1 --quiet --filter printable > $LOGNAME
+
+echo "=== RUN PROBE ANALYSIS ==="
 if [ -s "$LOGNAME" ]; then
     python ./tools/analyze_probes.py $LOGNAME
 else
-    echo "Arquivo de log vazio ou não encontrado. Pulando análise."
+    echo "Log file is empty or not found. Skipping analysis."
 fi
