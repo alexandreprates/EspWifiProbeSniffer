@@ -925,53 +925,102 @@ class ProbeAnalyzer:
         fig.suptitle('Análise Avançada - Características WiFi', fontsize=16)
 
         # Gráfico 1: Information Elements mais comuns
-        if hasattr(self, 'ie_stats') and self.ie_stats:
-            ie_top = dict(sorted(self.ie_stats.items(),
-                               key=lambda x: x[1], reverse=True)[:10])
-            ie_names = [f'IE {k}' for k in ie_top.keys()]
-            axes[0, 0].bar(range(len(ie_top)), list(ie_top.values()),
-                          color='lightblue')
-            axes[0, 0].set_title('Top 10 Information Elements')
-            axes[0, 0].set_xlabel('IE Type')
-            axes[0, 0].set_ylabel('Ocorrências')
-            axes[0, 0].set_xticks(range(len(ie_top)))
-            axes[0, 0].set_xticklabels(ie_names, rotation=45)
+        if (hasattr(self, '_advanced_stats') and
+                'ie_counts' in self._advanced_stats and
+                self._advanced_stats['ie_counts']):
+            ie_counts = self._advanced_stats['ie_counts']
+            ie_top = dict(sorted(ie_counts.items(),
+                                 key=lambda x: x[1], reverse=True)[:10])
+            if ie_top:
+                ie_names = [f'IE {k}\n{self._get_ie_name(k)}'
+                            for k in ie_top.keys()]
+                axes[0, 0].bar(range(len(ie_top)), list(ie_top.values()),
+                               color='lightblue')
+                axes[0, 0].set_title('Top 10 Information Elements')
+                axes[0, 0].set_xlabel('IE Type')
+                axes[0, 0].set_ylabel('Ocorrências')
+                axes[0, 0].set_xticks(range(len(ie_top)))
+                axes[0, 0].set_xticklabels(ie_names, rotation=45, fontsize=9)
+            else:
+                axes[0, 0].text(0.5, 0.5, 'Nenhum IE\nencontrado',
+                                ha='center', va='center',
+                                transform=axes[0, 0].transAxes)
+        else:
+            axes[0, 0].text(0.5, 0.5, 'Dados de IE\nnão disponíveis',
+                            ha='center', va='center',
+                            transform=axes[0, 0].transAxes)
+        axes[0, 0].set_title('Top 10 Information Elements')
 
         # Gráfico 2: Vendor IEs
-        if hasattr(self, 'vendor_stats') and self.vendor_stats:
-            vendor_top = dict(sorted(self.vendor_stats.items(),
-                                   key=lambda x: x[1], reverse=True)[:8])
-            axes[0, 1].bar(range(len(vendor_top)), list(vendor_top.values()),
-                          color='lightcoral')
-            axes[0, 1].set_title('Top Vendor IEs (OUI)')
-            axes[0, 1].set_xlabel('OUI')
-            axes[0, 1].set_ylabel('Ocorrências')
-            axes[0, 1].set_xticks(range(len(vendor_top)))
-            axes[0, 1].set_xticklabels(list(vendor_top.keys()), rotation=45)
+        if (hasattr(self, '_advanced_stats') and
+                'vendor_ie_counts' in self._advanced_stats and
+                self._advanced_stats['vendor_ie_counts']):
+            vendor_ie_counts = self._advanced_stats['vendor_ie_counts']
+            vendor_top = dict(sorted(vendor_ie_counts.items(),
+                                     key=lambda x: x[1], reverse=True)[:8])
+            if vendor_top:
+                axes[0, 1].bar(range(len(vendor_top)),
+                               list(vendor_top.values()),
+                               color='lightcoral')
+                axes[0, 1].set_title('Top Vendor IEs (OUI)')
+                axes[0, 1].set_xlabel('OUI')
+                axes[0, 1].set_ylabel('Ocorrências')
+                axes[0, 1].set_xticks(range(len(vendor_top)))
+                axes[0, 1].set_xticklabels(list(vendor_top.keys()),
+                                           rotation=45, fontsize=9)
+            else:
+                axes[0, 1].text(0.5, 0.5, 'Nenhum Vendor IE\nencontrado',
+                                ha='center', va='center',
+                                transform=axes[0, 1].transAxes)
+        else:
+            axes[0, 1].text(0.5, 0.5, 'Dados de Vendor IE\nnão disponíveis',
+                            ha='center', va='center',
+                            transform=axes[0, 1].transAxes)
+        axes[0, 1].set_title('Top Vendor IEs (OUI)')
 
-        # Gráfico 3: Atividade por hora (se disponível)
-        if hasattr(self, 'hourly_activity') and self.hourly_activity:
-            hours = sorted(self.hourly_activity.keys())
-            counts = [self.hourly_activity[h]['count'] for h in hours]
-            axes[1, 0].plot(hours, counts, marker='o', linewidth=2,
-                           color='green', markersize=8)
-            axes[1, 0].set_title('Atividade por Hora do Dia')
-            axes[1, 0].set_xlabel('Hora')
-            axes[1, 0].set_ylabel('Probe Requests')
-            axes[1, 0].grid(True, alpha=0.3)
+        # Gráfico 3: Atividade por hora
+        if (hasattr(self, '_temporal_stats') and
+                'hourly_counts' in self._temporal_stats):
+            hourly_counts = self._temporal_stats['hourly_counts']
+            if len(hourly_counts) > 0:
+                hours = sorted(hourly_counts.index)
+                counts = [hourly_counts[h] for h in hours]
+                axes[1, 0].plot(hours, counts, marker='o', linewidth=2,
+                                color='green', markersize=8)
+                axes[1, 0].set_xlabel('Hora')
+                axes[1, 0].set_ylabel('Probe Requests')
+                axes[1, 0].grid(True, alpha=0.3)
+                axes[1, 0].set_xticks(range(0, 24, 2))
+            else:
+                axes[1, 0].text(0.5, 0.5, 'Dados temporais\ninsuficientes',
+                                ha='center', va='center',
+                                transform=axes[1, 0].transAxes)
+        else:
+            axes[1, 0].text(0.5, 0.5, 'Análise temporal\nnão disponível',
+                            ha='center', va='center',
+                            transform=axes[1, 0].transAxes)
+        axes[1, 0].set_title('Atividade por Hora do Dia')
 
         # Gráfico 4: Estatísticas de randomização
-        if hasattr(self, 'devices'):
+        if hasattr(self, 'devices') and len(self.devices) > 0:
             randomized = sum(1 for d in self.devices.values() if d.randomized)
             not_randomized = len(self.devices) - randomized
 
-            labels = ['MAC Randomizado', 'MAC Original']
-            sizes = [randomized, not_randomized]
-            colors = ['lightblue', 'lightpink']
-
-            axes[1, 1].pie(sizes, labels=labels, autopct='%1.1f%%',
-                          startangle=90, colors=colors)
-            axes[1, 1].set_title('Distribuição de Randomização MAC')
+            if randomized + not_randomized > 0:
+                labels = ['MAC Randomizado', 'MAC Original']
+                sizes = [randomized, not_randomized]
+                colors = ['lightblue', 'lightpink']
+                axes[1, 1].pie(sizes, labels=labels, autopct='%1.1f%%',
+                               startangle=90, colors=colors)
+            else:
+                axes[1, 1].text(0.5, 0.5, 'Nenhum dispositivo\nencontrado',
+                                ha='center', va='center',
+                                transform=axes[1, 1].transAxes)
+        else:
+            axes[1, 1].text(0.5, 0.5, 'Dados não disponíveis',
+                            ha='center', va='center',
+                            transform=axes[1, 1].transAxes)
+        axes[1, 1].set_title('Distribuição de Randomização MAC')
 
         plt.tight_layout()
         output_file = os.path.join(
