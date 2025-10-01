@@ -1,6 +1,7 @@
 #!/bin/bash
 
-[ -z "$1" ] && { echo "Uso: $0 <env_name>"; exit 1; }
+[ -z "$1" ] && { echo -e "Usage: $0 <env_name>\nAvailable environments:\n$(platformio project config 2>/dev/null | grep "^env:" | sed 's/env:/ * /g')"; exit 1; }
+
 LOGNAME="./data/raw/probe_data_$(date +%Y%m%d_%H%M%S).log"
 
 echo "Checking for Python venv..."
