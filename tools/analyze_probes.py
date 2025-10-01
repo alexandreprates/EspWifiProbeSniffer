@@ -342,10 +342,7 @@ class ProbeAnalyzer:
         # Inicializar base de vendors
         if vendors_file is None:
             # Tentar carregar do local padrão (pasta tools/vendors)
-            vendors_file = os.path.join(
-                os.path.dirname(__file__),
-                'vendors', 'mac-vendors-export.json'
-            )
+            vendors_file = './tools/vendors/mac-vendors-export.json'
 
         self.vendor_db = VendorDatabase(vendors_file)
 
